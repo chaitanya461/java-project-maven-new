@@ -1,11 +1,3 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Java CI Pipeline
 
 on:
@@ -16,11 +8,11 @@ on:
 
 jobs:
 
-  # ----------------------------
-  # 1️⃣ TEST + BUILD + UPLOAD
-  # ----------------------------
+  # ----------------------------------
+  # 1️⃣ TEST + BUILD + UPLOAD ARTIFACT
+  # ----------------------------------
   build:
-    name: Test and Build
+    name: Test, Build and Upload
     runs-on: ubuntu-latest
 
     steps:
@@ -40,16 +32,23 @@ jobs:
       - name: Build JAR
         run: mvn clean package -DskipTests
 
-      - name: Upload JAR artifact
+      # 🔥 Find the correct runnable JAR (avoid sources/javadoc)
+      - name: Locate runnable JAR
+        run: |
+          JAR=$(ls target/*.jar | grep -v "sources\|javadoc" | head -n 1)
+          echo "JAR_FILE=$JAR" >> $GITHUB_ENV
+          echo "Found JAR: $JAR"
+
+      - name: Upload runnable JAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: java-app-jar
-          path: target/*.jar
+          path: ${{ env.JAR_FILE }}
 
 
-  # ----------------------------
-  # 2️⃣ DOWNLOAD + USE ARTIFACT
-  # ----------------------------
+  # ----------------------------------
+  # 2️⃣ DOWNLOAD + RUN ARTIFACT
+  # ----------------------------------
   consume-artifact:
     name: Download and Run Artifact
     runs-on: ubuntu-latest
@@ -62,11 +61,11 @@ jobs:
           name: java-app-jar
           path: ./artifact
 
-      - name: List downloaded files
+      - name: Show downloaded files
         run: ls -la ./artifact
 
       - name: Run the JAR
         run: |
-          JAR_FILE=$(ls ./artifact/*.jar | head -n 1)
+          JAR_FILE=$(ls ./artifact/*.jar)
           echo "Running $JAR_FILE"
           java -jar "$JAR_FILE"
