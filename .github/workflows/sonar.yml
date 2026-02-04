@@ -28,14 +28,14 @@ jobs:
 
     - name: Debug - List Found JARs
       # This step helps you see exactly where the JAR is if it fails again
-      run: find . -name "*.jar"
+      run: find . -name "*.war"
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: java-app-package
-        # "**/target/*.jar" finds the JAR regardless of project structure
-        path: "**/target/*.jar" 
+        # "**/target/*.war" finds the JAR regardless of project structure
+        path: "**/target/*.war" 
         if-no-files-found: error # Fails the job if the JAR is missing
 
   download-and-verify:
