@@ -2,8 +2,7 @@ name: Deploy WAR to Tomcat (Slave3)
 
 
 on:
-  push:
-    branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
   deploy:
