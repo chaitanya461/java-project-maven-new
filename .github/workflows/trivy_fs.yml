@@ -1,10 +1,6 @@
 name: Java Build and Artifact Pipeline
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
   workflow_dispatch: # Allows you to manually trigger the run
 
 jobs:
