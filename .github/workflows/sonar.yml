@@ -2,54 +2,50 @@ name: SonarQube
 
 on:
   push:
-   branches: ["master"]
+    branches: ["master"]
   workflow_dispatch: # Allows you to manually trigger the run
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
 
-    - name: Build and Test with Maven
-      # This creates the JAR file in the target directory
-      run: mvn -B package --file pom.xml
+      - name: Build and Test with Maven
+        run: mvn -B package --file pom.xml
 
-    - name: Debug - List Found JARs
-      # This step helps you see exactly where the JAR is if it fails again
-      run: find . -name "*.war"
+      - name: Debug - List Found WARs
+        run: find . -name "*.war"
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: java-app-package
-        # "**/target/*.war" finds the JAR regardless of project structure
-        path: "**/target/*.war" 
-        if-no-files-found: error # Fails the job if the JAR is missing
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-app-package
+          path: "**/target/*.war" 
+          if-no-files-found: error
 
   download-and-verify:
     runs-on: ubuntu-latest
-    needs: build-and-test # Waits for the first job to finish
+    needs: build-and-test
     steps:
-    - name: Download Build Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: java-app-package
-        path: artifacts/
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: java-app-package
+          path: artifacts/
 
-    - name: Verify Artifact Content
-      run: |
-        echo "Artifacts downloaded successfully:"
-        ls -R artifacts/
+      - name: Verify Artifact Content
+        run: |
+          echo "Artifacts downloaded successfully:"
+          ls -R artifacts/
         
   trivy-fs-scan:
     runs-on: ubuntu-latest
@@ -62,8 +58,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          wget -qO - https://aquasecurity.github.io | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install -y trivy
 
@@ -78,43 +74,41 @@ jobs:
           path: trivy-fs-report.txt
           
   sonarqube: 
-      runs-on: slave2  # Runs on your slave2 VM
+    runs-on: slave2  # Ensure your runner label is 'slave2' in GitHub Settings
+    needs: trivy-fs-scan
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
 
-  steps:
-     - name: Checkout Code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-     - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-
-     - name: Build and Test
-      run: mvn -B clean package --file pom.xml
+      - name: Build and Test
+        run: mvn -B clean package --file pom.xml
     
-     - name: SonarQube Analysis
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      run: |
-        mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-          -Dsonar.projectKey=YOUR_PROJECT_KEY \
-          -Dsonar.host.url=$SONAR_HOST_URL \
-          -Dsonar.token=$SONAR_TOKEN
+      - name: SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=YOUR_PROJECT_KEY \
+            -Dsonar.host.url=$SONAR_HOST_URL \
+            -Dsonar.token=$SONAR_TOKEN
 
-    # --- SEPARATE QUALITY GATE CODE BELOW ---
-     - name: SonarQube Quality Gate Check
-      id: sonarqube-quality-gate-check
-      uses: sonarsource/sonarqube-quality-gate-action@master
-      with:
-        # Time the scanner waits for a report to be processed (default is 300s)
-        pollingTimeoutSec: 600
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: SonarQube Quality Gate Check
+        id: sonarqube-quality-gate-check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        with:
+          pollingTimeoutSec: 600
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-     - name: "Display Quality Gate Status"
-      run: echo "The Quality Gate status is ${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}"
+      - name: "Display Quality Gate Status"
+        run: echo "The Quality Gate status is ${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}"
