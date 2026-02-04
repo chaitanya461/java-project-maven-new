@@ -31,5 +31,3 @@ jobs:
         # Renaming to ROOT.war deploys the app at the '/' path
         sudo cp target/*.war /home/ec2-user/apache-tomcat-11.0.18/webapps/root.war
         
-        echo "Starting Tomcat..."
-        sudo systemctl start tomcat
