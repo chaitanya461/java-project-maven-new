@@ -76,7 +76,7 @@ jobs:
           path: trivy-fs-report.txt
           
   sonarqube: 
-      runs-on: self-hosted  # Runs on your slave2 VM
+      runs-on: slave2  # Runs on your slave2 VM
 
   steps:
      - name: Checkout Code
