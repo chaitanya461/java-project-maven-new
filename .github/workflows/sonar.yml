@@ -2,8 +2,6 @@ name: SonarQube
 
 
 on:
-  push:
-    branches: ["master"]
   workflow_dispatch: # Allows you to manually trigger the run
 
 jobs:
