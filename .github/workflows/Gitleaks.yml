@@ -3,7 +3,7 @@ name: Gitleaks Secrets Scan
 on:
   push:
     branches: [ "master" ]
-  workflow_dispatch: 
+  pull_request:
 
 jobs:
   gitleaks:
@@ -13,9 +13,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Gitleaks (correct way)
+      - name: Install Gitleaks
         run: |
-          curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/install.sh | sudo bash
+          GITLEAKS_VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep tag_name | cut -d '"' -f4)
+          wget https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION#v}_linux_x64.deb
+          sudo dpkg -i gitleaks_*_linux_x64.deb
+
+      - name: Verify Gitleaks
+        run: gitleaks version
 
       - name: Run Gitleaks Scan
         run: |
