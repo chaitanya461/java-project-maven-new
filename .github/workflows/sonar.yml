@@ -114,6 +114,7 @@ jobs:
   deploy:
     # Use 'self-hosted' so it runs directly on your slave3 VM
     runs-on: slave
+    needs: sonarqube
 
     steps:
     - name: Checkout Code
