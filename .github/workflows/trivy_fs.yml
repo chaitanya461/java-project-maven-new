@@ -11,10 +11,26 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Run Gitleaks
+    - name: Install Gitleaks
       run: |
-          gitleaks detect --source . --verbose --report-format json --report-path gitleaks-report.json
+          wget https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_linux_x64.tar.gz
+          tar -xzf gitleaks_linux_x64.tar.gz
+          sudo mv gitleaks /usr/local/bin/
 
+    - name: Run Gitleaks Scan
+      run: |
+          gitleaks detect \
+            --source . \
+            --verbose \
+            --report-format json \
+            --report-path gitleaks-report.json
+
+    - name: Upload Gitleaks Report
+      uses: actions/upload-artifact@v4
+      with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+          
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
