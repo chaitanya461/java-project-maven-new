@@ -1,0 +1,31 @@
+name: Gitleaks Secrets Scan
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Gitleaks (correct way)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/install.sh | sudo bash
+
+      - name: Run Gitleaks Scan
+        run: |
+          gitleaks detect \
+            --source . \
+            --report-format json \
+            --report-path gitleaks-report.json
+
+      - name: Upload Gitleaks Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
