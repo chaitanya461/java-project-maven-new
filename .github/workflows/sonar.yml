@@ -136,5 +136,5 @@ jobs:
       run: |
         echo "Moving new WAR to webapps..."
         # Renaming to ROOT.war deploys the app at the '/' path
-        sudo cp target/*.war /home/ec2-user/apache-tomcat-11.0.18/webapps/root.war
+        sudo cp target/*.war /root/apache-tomcat-11.0.18/webapps/root.war
         
